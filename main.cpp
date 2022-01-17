@@ -1,10 +1,35 @@
 #include <iostream>
 #include <fstream>
+#include <string>
 
 int disassemble_8080_op(unsigned char *buff, int pc);
 
 int main() {
+    std::string filename{"../rom/invaders.concatenated"};
+    // Read the file
+    FILE *file = fopen(filename.c_str(), "rb");
+    // Confirm file is opened
+    if (file == NULL) {
+        std::cerr << "Couldn't open " << filename << std::endl;
+        return 1;
+    }
+    // Copy file contents into buffer
+    fseek(file, 0L, SEEK_END);
+    int fsize = ftell(file);
+    fseek(file, 0L, SEEK_SET);
 
+    // Allocate space for a buffer
+    auto *buffer = new unsigned char[fsize];
+    fread(buffer, fsize, 1, file);
+    fclose(file);
+
+    int pc = 0;
+
+    // Disassemble until the buffer is run out
+    while (pc < fsize) {
+        pc += disassemble_8080_op(buffer, pc);
+        printf("\n");
+    }
 
     return 0;
 }
