@@ -5,23 +5,23 @@
 int disassemble_8080_op(unsigned char *buff, int pc);
 
 int main() {
+    // Read ROM contents
     std::string filename{"../rom/invaders.concatenated"};
-    // Read the file
-    FILE *file = fopen(filename.c_str(), "rb");
+    std::ifstream file {filename, std::ifstream::binary};
     // Confirm file is opened
-    if (file == NULL) {
+    if (!file.is_open()) {
         std::cerr << "Couldn't open " << filename << std::endl;
         return 1;
     }
-    // Copy file contents into buffer
-    fseek(file, 0L, SEEK_END);
-    int fsize = ftell(file);
-    fseek(file, 0L, SEEK_SET);
-
+    // Read file contents into a buffer
+    std::filebuf *pbuf = file.rdbuf();
+    // Get file size
+    size_t fsize = pbuf->pubseekoff(0, file.end, file.binary);
+    pbuf->pubseekpos(0, file.binary);
     // Allocate space for a buffer
     auto *buffer = new unsigned char[fsize];
-    fread(buffer, fsize, 1, file);
-    fclose(file);
+    pbuf->sgetn(reinterpret_cast<char *>(buffer), fsize);
+    file.close();
 
     int pc = 0;
 
@@ -31,11 +31,12 @@ int main() {
         printf("\n");
     }
 
+    delete[] buffer;
     return 0;
 }
 
 /*
- * buff is a pointer to 8080 code
+ * buff is a pointer to 8080 ROM file buffer
  * pc is the current program offset (program counter)
  *
  * returns the number of bytes of the op
